@@ -1,0 +1,44 @@
+[
+  {
+    "drug_a":    "warfarin",
+    "drug_b":    "aspirin",
+    "severity":  "HIGH",
+    "effect":    "Increased bleeding risk — both inhibit platelet function/clotting"
+  },
+  {
+    "drug_a":    "ciprofloxacin",
+    "drug_b":    "antacids",
+    "severity":  "MODERATE",
+    "effect":    "Antacids chelate ciprofloxacin — reduced absorption by up to 90%"
+  },
+  {
+    "drug_a":    "metronidazole",
+    "drug_b":    "alcohol",
+    "severity":  "HIGH",
+    "effect":    "Disulfiram-like reaction — severe nausea, vomiting, flushing"
+  },
+  {
+    "drug_a":    "azithromycin",
+    "drug_b":    "warfarin",
+    "severity":  "MODERATE",
+    "effect":    "Azithromycin inhibits CYP3A4 — increases warfarin levels"
+  },
+  {
+    "drug_a":    "ciprofloxacin",
+    "drug_b":    "theophylline",
+    "severity":  "HIGH",
+    "effect":    "Ciprofloxacin inhibits CYP1A2 — theophylline toxicity risk"
+  },
+  {
+    "drug_a":    "amoxicillin",
+    "drug_b":    "penicillin",
+    "severity":  "MODERATE",
+    "effect":    "Cross-reactive — use cautiously in penicillin-sensitive patients"
+  },
+  {
+    "drug_a":    "chloroquine",
+    "drug_b":    "antacids",
+    "severity":  "MODERATE",
+    "effect":    "Reduced chloroquine absorption — separate by 4 hours"
+  }
+]

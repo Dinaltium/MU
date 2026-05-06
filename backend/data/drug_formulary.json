@@ -1,0 +1,91 @@
+{
+  "bacterial_meningitis": [
+    {
+      "name": "ceftriaxone",
+      "class": "cephalosporin",
+      "efficacy_rates": { "bacterial_meningitis": 0.92 },
+      "contraindications": ["penicillin_allergy"],
+      "availability_india": 0.90
+    },
+    {
+      "name": "ampicillin",
+      "class": "penicillin",
+      "efficacy_rates": { "bacterial_meningitis": 0.75 },
+      "contraindications": ["penicillin_allergy"],
+      "availability_india": 0.95
+    }
+  ],
+  "typhoid": [
+    {
+      "name": "azithromycin",
+      "class": "macrolide",
+      "efficacy_rates": { "typhoid": 0.88 },
+      "contraindications": [],
+      "availability_india": 0.90
+    },
+    {
+      "name": "ciprofloxacin",
+      "class": "fluoroquinolone",
+      "efficacy_rates": { "typhoid": 0.82 },
+      "contraindications": ["under_18", "pregnancy"],
+      "availability_india": 0.92
+    }
+  ],
+  "malaria": [
+    {
+      "name": "chloroquine",
+      "class": "antimalarial",
+      "efficacy_rates": { "malaria": 0.78 },
+      "contraindications": ["g6pd_deficiency"],
+      "availability_india": 0.95
+    },
+    {
+      "name": "artemether_lumefantrine",
+      "class": "antimalarial_combination",
+      "efficacy_rates": { "malaria": 0.95 },
+      "contraindications": [],
+      "availability_india": 0.75
+    }
+  ],
+  "pneumonia": [
+    {
+      "name": "amoxicillin",
+      "class": "penicillin",
+      "efficacy_rates": { "pneumonia": 0.82 },
+      "contraindications": ["penicillin_allergy"],
+      "availability_india": 0.97
+    },
+    {
+      "name": "azithromycin",
+      "class": "macrolide",
+      "efficacy_rates": { "pneumonia": 0.80 },
+      "contraindications": [],
+      "availability_india": 0.90
+    }
+  ],
+  "urinary_tract_infection": [
+    {
+      "name": "ciprofloxacin",
+      "class": "fluoroquinolone",
+      "efficacy_rates": { "urinary_tract_infection": 0.85 },
+      "contraindications": ["under_18", "pregnancy"],
+      "availability_india": 0.92
+    },
+    {
+      "name": "nitrofurantoin",
+      "class": "nitrofuran",
+      "efficacy_rates": { "urinary_tract_infection": 0.80 },
+      "contraindications": ["renal_impairment"],
+      "availability_india": 0.85
+    }
+  ],
+  "default": [
+    {
+      "name": "consult_specialist",
+      "class": "none",
+      "efficacy_rates": {},
+      "contraindications": [],
+      "availability_india": 1.0
+    }
+  ]
+}

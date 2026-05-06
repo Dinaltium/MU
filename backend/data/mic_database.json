@@ -1,0 +1,9 @@
+{
+  "amoxicillin":   { "pneumonia": 0.5, "urinary_tract_infection": 8.0 },
+  "azithromycin":  { "typhoid": 0.25, "pneumonia": 0.5 },
+  "ciprofloxacin": { "typhoid": 0.03, "urinary_tract_infection": 0.25 },
+  "ceftriaxone":   { "bacterial_meningitis": 0.06 },
+  "chloroquine":   { "malaria": 0.1 },
+  "doxycycline":   { "typhoid": 0.5, "pneumonia": 1.0 },
+  "metronidazole": { "gi_infection": 2.0 }
+}

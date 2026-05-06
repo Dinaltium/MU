@@ -1,0 +1,314 @@
+/* ─── RxBridge Design System ───────────────────────────────────────────
+   Aesthetic: Clinical Precision Bento
+   Tone: Medical-grade utility meets modern product clarity
+   Fonts: DM Sans (UI) + DM Mono (numbers/codes)
+   Color story: Near-white canvas · Slate text · Teal accent · Ember warnings
+──────────────────────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap");
+@import "tailwindcss";
+
+@theme {
+  /* Spacing */
+  --spacing-bento-gap: 8px;
+  --spacing-card: 14px;
+
+  /* Colors */
+  --color-canvas:      #FFFFFF; /* Pure white page background */
+  --color-surface:     #F1F5F9; /* Soft grey for bento grid contents */
+  --color-border:      #E4E7ED;
+  --color-border-strong: #CBD5E1;
+
+  --color-text-primary:   #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted:     #94A3B8;
+
+  --color-teal:       #0D9488;
+  --color-teal-light: #CCFBF1;
+  --color-teal-dark:  #0F766E;
+
+  --color-ember:      #F59E0B;
+  --color-ember-light: #FEF3C7;
+  --color-rose:       #F43F5E;
+  --color-rose-light: #FFE4E6;
+  --color-sky:        #0EA5E9;
+  --color-sky-light:  #E0F2FE;
+  --color-violet:     #8B5CF6;
+  --color-violet-light: #EDE9FE;
+
+  /* Sidebar (On Grey Background) */
+  --color-sidebar-bg:      var(--color-surface);
+  --color-sidebar-text:    #64748B;
+  --color-sidebar-active:  #0D9488;
+  --color-sidebar-hover:   #FFFFFF; /* White hover on grey sidebar */
+
+  /* Typography */
+  --font-sans: "DM Sans", sans-serif;
+  --font-mono: "DM Mono", monospace;
+
+  /* Radii */
+  --radius-card:    20px; /* Softer, more premium rounded corners */
+  --radius-inner:   8px;
+  --radius-pill:    100px;
+
+  /* Shadows (Forcefully removed for flat look) */
+  --shadow-card: none !important;
+  --shadow-card-hover: none !important;
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-canvas);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+}
+
+/* ─── Scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+
+/* ─── Bento Layout ─────────────────────────────────────────────────── */
+.bento-layout {
+  display: grid;
+  grid-template-columns: 228px 1fr;
+  min-height: 100vh;
+  gap: var(--spacing-bento-gap);
+  padding: var(--spacing-bento-gap);
+  background: var(--color-canvas);
+}
+
+/* ─── Card ─────────────────────────────────────────────────────────── */
+.card {
+  background: var(--color-surface) !important;
+  border: none !important;
+  border-radius: var(--radius-card);
+  box-shadow: none !important;
+  transition: none !important;
+}
+.card-pad { padding: var(--spacing-card); }
+
+/* ─── Sidebar card ─────────────────────────────────────────────────── */
+.sidebar-card {
+  background: var(--color-surface) !important;
+  border: none !important;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Bento grid inside main ───────────────────────────────────────── */
+.bento-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-bento-gap);
+}
+
+.bento-row {
+  display: grid;
+  gap: var(--spacing-bento-gap);
+}
+
+/* ─── Typography ───────────────────────────────────────────────────── */
+.label-xs {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.num-display {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* ─── Badge ────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.badge-teal   { background: var(--color-teal-light);   color: var(--color-teal-dark); }
+.badge-ember  { background: var(--color-ember-light);  color: #92400E; }
+.badge-rose   { background: var(--color-rose-light);   color: #9F1239; }
+.badge-sky    { background: var(--color-sky-light);    color: #0369A1; }
+.badge-slate  { background: #F1F5F9; color: var(--color-text-secondary); }
+
+/* ─── Button ───────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-inner);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+  font-family: var(--font-sans);
+  line-height: 1;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--color-teal);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) { background: var(--color-teal-dark); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+.btn-ghost:hover:not(:disabled) { background: var(--color-canvas); color: var(--color-text-primary); }
+
+/* ─── Input ────────────────────────────────────────────────────────── */
+.input {
+  width: 100%;
+  padding: 9px 12px;
+  border: none !important;
+  border-radius: var(--radius-inner);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  background: var(--color-canvas) !important;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  line-height: 1.5;
+}
+.input:focus {
+  border-color: var(--color-teal);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+}
+.input::placeholder { color: var(--color-text-muted); }
+
+/* ─── Select ───────────────────────────────────────────────────────── */
+.select {
+  appearance: none;
+  padding: 9px 32px 9px 12px;
+  border: none !important;
+  border-radius: var(--radius-inner);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  background: var(--color-canvas) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center !important;
+  cursor: pointer;
+  outline: none;
+}
+.select:focus {
+  border-color: var(--color-teal);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+}
+
+/* ─── Sidebar nav item ─────────────────────────────────────────────── */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-inner);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-sidebar-text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--color-sidebar-hover); color: var(--color-text-primary); }
+.nav-item.active { background: var(--color-teal-light); color: var(--color-teal-dark); }
+.nav-item.active svg { color: var(--color-teal-dark); }
+
+/* ─── Divider ──────────────────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 8px 0;
+}
+
+/* ─── Stat accent bar ──────────────────────────────────────────────── */
+.stat-card-accent {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-card);
+  opacity: 0.06;
+}
+
+/* ─── Urgency dot ──────────────────────────────────────────────────── */
+.urgency-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ─── Pipeline step ────────────────────────────────────────────────── */
+.pipeline-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+.pipeline-step.done { color: var(--color-teal); }
+.pipeline-step.running { color: var(--color-ember); }
+.pipeline-step.failed { color: var(--color-rose); }
+
+/* ─── Animations ───────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.animate-fade-in { animation: fadeIn 0.25s ease forwards; }
+.animate-spin-slow { animation: spin 1.2s linear infinite; }
+
+/* ─── Skeleton ─────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  from { background-position: -200px 0; }
+  to   { background-position: 200px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+
+/* ─── Overrides & Flat Enforcement ────────────────────────────────── */
+.card, .sidebar-card, [class*="shadow-"], [class*="border"] {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Ensure no transitions or hovers re-introduce styles */
+*:hover {
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+/* ─── Focus visible ────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+}

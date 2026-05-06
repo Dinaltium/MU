@@ -1,0 +1,51 @@
+# ─── Git ignore ───────────────────────────────────────────
+# WHY THIS MATTERS:
+#   A single accidental git push of .env leaks database credentials,
+#   JWT secrets, and API keys. Once pushed, the secret is compromised
+#   even if the commit is deleted — GitHub scans for secrets and so
+#   do attackers who watch public commit streams.
+
+# Environment secrets — NEVER commit
+.env
+*.env
+.env.local
+.env.production
+
+# Python artefacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.pkl          # trained model files — regenerate from training data
+*.pickle
+
+# Virtual environments — created by dev.ps1 automatically
+venv/
+.venv/
+env/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.vercel
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker
+*.dockerignore

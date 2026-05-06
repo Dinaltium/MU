@@ -1,0 +1,26 @@
+{
+  "south_india": {
+    "penicillin":        0.25,
+    "fluoroquinolone":   0.35,
+    "macrolide":         0.20,
+    "cephalosporin":     0.18,
+    "nitrofuran":        0.10,
+    "antimalarial":      0.15
+  },
+  "north_india": {
+    "penicillin":        0.30,
+    "fluoroquinolone":   0.40,
+    "macrolide":         0.22,
+    "cephalosporin":     0.20,
+    "nitrofuran":        0.12,
+    "antimalarial":      0.20
+  },
+  "default": {
+    "penicillin":        0.20,
+    "fluoroquinolone":   0.30,
+    "macrolide":         0.18,
+    "cephalosporin":     0.15,
+    "nitrofuran":        0.10,
+    "antimalarial":      0.15
+  }
+}
