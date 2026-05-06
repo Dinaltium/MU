@@ -1,0 +1,13 @@
+from .auth import router as auth_router  # noqa: F401
+from .patients import router as patients_router  # noqa: F401
+from .doctors import router as doctors_router  # noqa: F401
+from .labs import router as labs_router  # noqa: F401
+from .diagnoses import router as diagnoses_router  # noqa: F401
+from .medications import router as medications_router  # noqa: F401
+from .recovery import router as recovery_router  # noqa: F401
+from .reports import router as reports_router  # noqa: F401
+from .calendar import router as calendar_router  # noqa: F401
+from .sos import router as sos_router  # noqa: F401
+from .notifications import router as notifications_router  # noqa: F401
+from .ai_assist import router as ai_assist_router  # noqa: F401
+from .admin import router as admin_router  # noqa: F401
