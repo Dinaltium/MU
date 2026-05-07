@@ -42,6 +42,7 @@ class PipelineState:
     hitl_reason: str | None = None
     pipeline_run_id: str | None = None
     pipeline_status: str = "running"
+    step_logs: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         """Serialize for storage / Gemini context."""
@@ -72,4 +73,5 @@ class PipelineState:
             "hitl_pause": self.hitl_pause,
             "hitl_reason": self.hitl_reason,
             "pipeline_status": self.pipeline_status,
+            "step_logs": self.step_logs,
         }

@@ -51,7 +51,6 @@ class User(Base):
     )
 
     __table_args__ = (
-        Index("ix_users_email", "email"),
         Index("ix_users_role", "role"),
     )
 

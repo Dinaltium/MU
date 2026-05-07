@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -17,8 +17,8 @@ class CalendarEvent(Base):
     __tablename__ = "calendar_events"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    doctor_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    patient_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    doctor_id: Mapped[str] = mapped_column(String, ForeignKey("doctor_profiles.id"), nullable=False, index=True)
+    patient_id: Mapped[str | None] = mapped_column(String, ForeignKey("patient_profiles.id"), nullable=True, index=True)
     title: Mapped[str] = mapped_column(String, nullable=False)
     event_type: Mapped[str] = mapped_column(String, nullable=False)  # surgery|follow_up|consultation|personal
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

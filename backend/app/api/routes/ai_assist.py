@@ -89,6 +89,7 @@ async def trigger_ai_pipeline(
             final_state.agent_7_output, final_state.agent_8_output, final_state.agent_9_output
         ],
         "final_recommendation": final_state.agent_7_output,
+        "step_logs": final_state.step_logs,
         "pipeline_duration_ms": 0,
         "run_at": datetime.utcnow(),
         "completed_at": datetime.utcnow() if final_state.pipeline_status == "complete" else None

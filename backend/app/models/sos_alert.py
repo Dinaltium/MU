@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Float, String, Text
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -17,7 +17,7 @@ class SosAlert(Base):
     __tablename__ = "sos_alerts"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, ForeignKey("patient_profiles.id"), nullable=False, index=True)
     triggered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
     location_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
     location_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -26,7 +26,7 @@ class SosAlert(Base):
         Enum("pending", "accepted", "rejected", "resolved", name="sos_status_enum"),
         default="pending",
     )
-    responded_by_doctor_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    responded_by_doctor_id: Mapped[str | None] = mapped_column(String, ForeignKey("doctor_profiles.id"), nullable=True)
     responded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     resolution_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 

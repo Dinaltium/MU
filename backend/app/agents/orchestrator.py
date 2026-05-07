@@ -10,9 +10,9 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.agents.pipeline_state import PipelineState
 from app.agents import (
-    agent_1_symptom, agent_2_diagnosis, agent_3_drug,
-    agent_4_resistance, agent_5_safety, agent_6_explainability,
-    agent_7_report, agent_8_monitoring, agent_9_vision
+    symptom_analysis, diagnosis_engine, treatment_plan,
+    resistance_check, safety_audit, reasoning_engine,
+    report_generator, recovery_monitoring, medical_vision
 )
 from app.models.pipeline_run import PipelineRun
 from app.services.notification_service import notify_hitl_required
@@ -61,13 +61,13 @@ async def run_pipeline(state: PipelineState, image_data: str | None, db: AsyncSe
     
     # Phase 0: Vision (Agent 9) - Parallel if image provided
     if image_data:
-        await agent_9_vision.run(state, image_data)
+        await medical_vision.run(state, image_data)
 
     # Phase 1: Clinical Assessment (Sequential Agents 1-4)
-    state = await agent_1_symptom.run(state)
-    state = await agent_2_diagnosis.run(state)
-    state = await agent_3_drug.run(state)
-    state = await agent_4_resistance.run(state)
+    state = await symptom_analysis.run(state)
+    state = await diagnosis_engine.run(state)
+    state = await treatment_plan.run(state)
+    state = await resistance_check.run(state)
 
     # Check for HITL Pause after Agent 4
     if state.hitl_pause:
@@ -77,7 +77,7 @@ async def run_pipeline(state: PipelineState, image_data: str | None, db: AsyncSe
         return state
 
     # Phase 2: Safety Check (Agent 5)
-    state = await agent_5_safety.run(state)
+    state = await safety_audit.run(state)
 
     # Check for HITL Pause after Agent 5
     if state.hitl_pause:
@@ -87,9 +87,9 @@ async def run_pipeline(state: PipelineState, image_data: str | None, db: AsyncSe
         return state
 
     # Phase 3: Finalization (Agents 6-8)
-    state = await agent_6_explainability.run(state)
-    state = await agent_7_report.run(state)
-    state = await agent_8_monitoring.run(state, db)
+    state = await reasoning_engine.run(state)
+    state = await report_generator.run(state)
+    state = await recovery_monitoring.run(state, db)
 
     state.pipeline_status = "complete"
     

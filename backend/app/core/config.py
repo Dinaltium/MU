@@ -4,14 +4,15 @@ RxBridge application settings — all values from .env, zero hardcoded secrets.
 """
 from __future__ import annotations
 
-from typing import List
+from typing import Any, List
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -43,6 +44,19 @@ class Settings(BaseSettings):
     GEMINI_MAX_TOKENS: int = 2048
 
     # ── CORS ──────────────────────────────────────────────────────────────────
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            if v.startswith("[") and v.endswith("]"):
+                import json
+                try:
+                    return json.loads(v)
+                except Exception:
+                    pass
+            return [i.strip() for i in v.split(",") if i.strip()]
+        return v
+
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:5173",

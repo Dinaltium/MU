@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, Float, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, Enum, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -17,7 +17,7 @@ class SymptomCheckin(Base):
     __tablename__ = "symptom_checkins"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, ForeignKey("patient_profiles.id"), nullable=False, index=True)
     checkin_date: Mapped[date] = mapped_column(Date, default=date.today, index=True)
     feel_status: Mapped[str] = mapped_column(
         Enum("better", "same", "worse", name="feel_status_enum"), nullable=False
@@ -44,7 +44,7 @@ class RecoveryScore(Base):
     __tablename__ = "recovery_scores"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, ForeignKey("patient_profiles.id"), nullable=False, index=True)
     score_date: Mapped[date] = mapped_column(Date, default=date.today, index=True)
     score: Mapped[float] = mapped_column(Float, nullable=False)           # 0-100
     medication_adherence_score: Mapped[float | None] = mapped_column(Float, nullable=True)  # 0-40

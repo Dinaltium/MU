@@ -59,6 +59,14 @@ class TokenResponse(BaseModel):
     full_name: str
 
 
+class UserMeResponse(BaseModel):
+    user_id: str
+    email: str
+    role: str
+    profile_id: str
+    full_name: str
+
+
 class RefreshRequest(BaseModel):
     refresh_token: str
 
@@ -555,6 +563,7 @@ class PipelineRunResponse(BaseModel):
     hitl_approved: Optional[bool]
     agent_outputs: List[Any]
     final_recommendation: Optional[dict]
+    step_logs: List[str] = []
     pipeline_duration_ms: Optional[int]
     run_at: datetime
     completed_at: Optional[datetime]

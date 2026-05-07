@@ -47,4 +47,4 @@ if ($REDIS_URL -like "redis://localhost*") {
 }
 
 Write-Host "  Starting RxBridge API..." -ForegroundColor Green
-& $PYTHON -m uvicorn "main:app" --host 127.0.0.1 --port 8000 --reload --reload-dir "$BACKEND" --app-dir "$BACKEND" --env-file "$ENV_FILE" --log-level info
+& $PYTHON -m uvicorn "app.main:app" --host 127.0.0.1 --port 8000 --reload --reload-dir "$BACKEND" --app-dir "$BACKEND" --env-file "$ENV_FILE" --log-level info

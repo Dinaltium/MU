@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, JSON, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, Enum, ForeignKey, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -17,10 +17,10 @@ class LabOrder(Base):
     __tablename__ = "lab_orders"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    doctor_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    lab_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
-    diagnosis_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    doctor_id: Mapped[str] = mapped_column(String, ForeignKey("doctor_profiles.id"), nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, ForeignKey("patient_profiles.id"), nullable=False, index=True)
+    lab_id: Mapped[str | None] = mapped_column(String, ForeignKey("lab_profiles.id"), nullable=True, index=True)
+    diagnosis_id: Mapped[str | None] = mapped_column(String, ForeignKey("diagnoses.id"), nullable=True)
     order_code: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     tests_requested: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     clinical_notes: Mapped[str | None] = mapped_column(Text, nullable=True)

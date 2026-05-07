@@ -18,6 +18,8 @@ engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     future=True,
+    pool_pre_ping=True,
+    pool_recycle=3600,
     # SQLite tuning (noop on Postgres/asyncpg)
     connect_args={"check_same_thread": False}
     if "sqlite" in settings.DATABASE_URL

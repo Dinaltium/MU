@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, JSON, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -17,7 +17,7 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    recipient_user_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    recipient_user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False, index=True)
     sender_user_id: Mapped[str | None] = mapped_column(String, nullable=True)
     notification_type: Mapped[str] = mapped_column(String, nullable=False, index=True)
     title: Mapped[str] = mapped_column(String, nullable=False)

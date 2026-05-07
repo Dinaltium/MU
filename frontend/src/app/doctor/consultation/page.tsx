@@ -1,11 +1,11 @@
 "use client";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { patientsApi, consultationsApi, type Consultation } from "@/lib/api";
+import { patientsApi, aiAssistApi, diagnosesApi, type PipelineRun } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
 import { PageSpinner, Spinner } from "@/components/ui/Spinner";
 import { Badge } from "@/components/ui/Badge";
-import { Stethoscope, CheckCircle, XCircle, Clock, ChevronRight, Activity, Search } from "lucide-react";
+import { Stethoscope, CheckCircle, XCircle, Clock, Activity, AlertCircle } from "lucide-react";
 import { MedicalAutocomplete } from "@/components/ui/MedicalAutocomplete";
 
 const SYMPTOM_OPTIONS = [
@@ -13,20 +13,20 @@ const SYMPTOM_OPTIONS = [
   "chest_pain", "shortness_of_breath", "fatigue", "rash", "sore_throat",
   "neck_stiffness", "confusion", "abdominal_pain", "dysuria",
 ];
-const REGIONS = ["south_india", "north_india", "default"];
 
-function PipelineProgress({ updates }: { updates: string[] }) {
+function PipelineProgress({ logs }: { logs: string[] }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-      {updates.map((u, i) => {
-        const [agent, status] = u.split(":");
-        const cls = status === "complete" ? "done" : status === "error" ? "failed" : "running";
+      {logs.map((log, i) => {
+        const isDone = log.toLowerCase().includes("complete") || log.toLowerCase().includes("finish");
+        const isError = log.toLowerCase().includes("error") || log.toLowerCase().includes("fail");
+        const cls = isDone ? "done" : isError ? "failed" : "running";
         return (
           <div key={i} className={`pipeline-step ${cls}`}>
-            {cls === "done" && <CheckCircle size={12} />}
-            {cls === "failed" && <XCircle size={12} />}
-            {cls === "running" && <Spinner size={11} />}
-            <span>{agent.replace(/([A-Z])/g, " $1").trim()}</span>
+            {isDone && <CheckCircle size={12} />}
+            {isError && <XCircle size={12} />}
+            {!isDone && !isError && <Spinner size={11} />}
+            <span>{log}</span>
           </div>
         );
       })}
@@ -34,75 +34,87 @@ function PipelineProgress({ updates }: { updates: string[] }) {
   );
 }
 
-function ResultCard({ result }: { result: Consultation["pipeline_output"] }) {
+function ResultCard({ run }: { run: PipelineRun }) {
+  const result = run.final_recommendation;
   if (!result) return null;
+  
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {/* Diagnosis */}
-      <div style={{ background: "var(--color-teal-light)", borderRadius: 12, padding: 12 }}>
-        <p className="label-xs" style={{ color: "var(--color-teal-dark)", marginBottom: 4 }}>Primary Diagnosis</p>
-        <p style={{ fontSize: 15, fontWeight: 700, color: "var(--color-teal-dark)" }}>
-          {result.top_diagnosis?.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
-        </p>
-        {result.icd_code && (
-          <p style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--color-teal-dark)", opacity: 0.8, marginTop: 2 }}>ICD: {result.icd_code}</p>
-        )}
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: "var(--spacing-bento-gap)" }}>
+      {/* Column 1: Diagnosis & Summary */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-bento-gap)" }}>
+        <div className="card card-pad" style={{ background: "var(--color-teal-light)" }}>
+          <p className="label-xs" style={{ color: "var(--color-teal-dark)", marginBottom: 4 }}>Primary Diagnosis</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: "var(--color-teal-dark)" }}>
+            {result.top_diagnosis?.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+          </p>
+          {result.icd_code && (
+            <p style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--color-teal-dark)", opacity: 0.8, marginTop: 4 }}>
+              Standardized ICD: {result.icd_code}
+            </p>
+          )}
+        </div>
+
+        <div className="card card-pad">
+          <p className="label-xs" style={{ marginBottom: 8 }}>Clinical Reasoning</p>
+          <p style={{ fontSize: 12, color: "var(--color-text-secondary)", lineHeight: 1.6 }}>
+            {result.doctor_summary}
+          </p>
+        </div>
+        
+        <div className="card card-pad" style={{ background: "var(--color-canvas)" }}>
+          <p className="label-xs" style={{ marginBottom: 6 }}>Pipeline Trace Logs</p>
+          <div style={{ maxHeight: 150, overflowY: "auto", fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--color-text-muted)" }}>
+            {run.step_logs.map((log, i) => <div key={i} style={{ marginBottom: 2 }}>{log}</div>)}
+          </div>
+        </div>
       </div>
 
-      {/* Differentials */}
-      {result.diagnoses && result.diagnoses.length > 1 && (
-        <div className="card card-pad" style={{ background: "var(--color-canvas)" }}>
-          <p className="label-xs" style={{ marginBottom: 8 }}>Differential Diagnoses</p>
-          {result.diagnoses.map((d, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600 }}>{d.condition.replace(/_/g, " ")}</span>
-                  <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--color-text-muted)" }}>{(d.probability * 100).toFixed(0)}%</span>
+      {/* Column 2: Treatment & Safety */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-bento-gap)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--spacing-bento-gap)" }}>
+          <div className="card card-pad">
+            <p className="label-xs" style={{ marginBottom: 4 }}>Best Fit Drug</p>
+            <p style={{ fontSize: 15, fontWeight: 700 }}>{result.top_drug}</p>
+          </div>
+          <div className="card card-pad">
+            <p className="label-xs" style={{ marginBottom: 4 }}>Resistance Risk</p>
+            <Badge variant={result.resistance_risk === "HIGH" ? "rose" : result.resistance_risk === "MODERATE" ? "ember" : "teal"}>
+              {result.resistance_risk}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="card card-pad">
+          <p className="label-xs" style={{ marginBottom: 8 }}>Safety & Interaction Audit</p>
+          {result.safety_flags && result.safety_flags.length > 0 ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {result.safety_flags.map((f) => <Badge key={f} variant="rose">{f}</Badge>)}
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--color-teal)" }}>
+              <CheckCircle size={14} />
+              <span style={{ fontSize: 12, fontWeight: 600 }}>No Contraindications Found</span>
+            </div>
+          )}
+        </div>
+
+        {result.diagnoses && result.diagnoses.length > 1 && (
+          <div className="card card-pad">
+            <p className="label-xs" style={{ marginBottom: 10 }}>Differential Probabilities</p>
+            {result.diagnoses.map((d, i) => (
+              <div key={i} style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600 }}>{d.condition}</span>
+                  <span style={{ fontSize: 11, fontFamily: "var(--font-mono)" }}>{(d.probability * 100).toFixed(1)}%</span>
                 </div>
-                <div style={{ height: 4, background: "var(--color-border)", borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${d.probability * 100}%`, background: "var(--color-teal)", borderRadius: 4, transition: "width 0.6s ease" }} />
+                <div style={{ height: 6, background: "var(--color-canvas)", borderRadius: 100, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${d.probability * 100}%`, background: "var(--color-teal)", borderRadius: 100 }} />
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Drug */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        <div className="card card-pad" style={{ background: "var(--color-canvas)" }}>
-          <p className="label-xs" style={{ marginBottom: 4 }}>Recommended Drug</p>
-          <p style={{ fontSize: 14, fontWeight: 700 }}>{result.top_drug}</p>
-        </div>
-        <div className="card card-pad" style={{ background: "var(--color-canvas)" }}>
-          <p className="label-xs" style={{ marginBottom: 4 }}>Resistance Risk</p>
-          <p style={{ fontSize: 14, fontWeight: 700, color: result.resistance_risk === "HIGH" ? "var(--color-rose)" : result.resistance_risk === "MODERATE" ? "var(--color-ember)" : "var(--color-teal)" }}>
-            {result.resistance_risk}
-          </p>
-        </div>
-        <div className="card card-pad" style={{ background: "var(--color-canvas)" }}>
-          <p className="label-xs" style={{ marginBottom: 4 }}>PK/PD Ratio</p>
-          <p style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-mono)" }}>
-            {result.pkpd_ratio !== undefined ? result.pkpd_ratio.toFixed(2) : "—"}
-          </p>
-        </div>
-        <div className="card card-pad" style={{ background: "var(--color-canvas)" }}>
-          <p className="label-xs" style={{ marginBottom: 4 }}>Safety Flags</p>
-          {result.safety_flags && result.safety_flags.length > 0
-            ? result.safety_flags.map((f) => <Badge key={f} variant="rose">{f}</Badge>)
-            : <p style={{ fontSize: 12, color: "var(--color-teal)" }}>None ✓</p>
-          }
-        </div>
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* Summary */}
-      {result.doctor_summary && (
-        <div className="card card-pad" style={{ background: "var(--color-canvas)" }}>
-          <p className="label-xs" style={{ marginBottom: 6 }}>Clinical Summary (AI)</p>
-          <p style={{ fontSize: 12, color: "var(--color-text-secondary)", lineHeight: 1.6 }}>{result.doctor_summary}</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -112,8 +124,8 @@ export default function ConsultationPage() {
   const [step, setStep] = useState<"form" | "running" | "done">("form");
   const [selectedPatientId, setSelectedPatientId] = useState("");
   const [symptoms, setSymptoms] = useState<string[]>([]);
-  const [region, setRegion] = useState("south_india");
-  const [result, setResult] = useState<Consultation | null>(null);
+  const [severity, setSeverity] = useState("mild");
+  const [runData, setRunData] = useState<PipelineRun | null>(null);
   const [pollingId, setPollingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -123,199 +135,176 @@ export default function ConsultationPage() {
     enabled: !!user,
   });
 
-  // Poll consultation result every 2s
+  // Poll for pipeline status
   const {} = useQuery({
-    queryKey: ["consultation-poll", pollingId],
-    queryFn: () => consultationsApi.get(pollingId!),
+    queryKey: ["pipeline-run", pollingId],
+    queryFn: () => aiAssistApi.getRun(pollingId!),
     enabled: !!pollingId,
-    refetchInterval: 2000,
-    select: (data: Consultation) => {
-      if (data.status === "complete" || data.status === "failed") {
-        setResult(data);
+    refetchInterval: 1500,
+    select: (data: PipelineRun) => {
+      if (data.pipeline_status === "complete" || data.pipeline_status === "failed") {
+        setRunData(data);
         setStep("done");
         setPollingId(null);
+      } else {
+        setRunData(data); // Update logs while running
       }
       return data;
     },
   });
 
   const startMutation = useMutation({
-    mutationFn: consultationsApi.start,
-    onSuccess: (data: {consultation_id: string}) => {
-      setPollingId(data.consultation_id);
+    mutationFn: async (payload: { patient_id: string; symptoms: string[]; severity: string }) => {
+      // 1. Create a placeholder diagnosis first
+      const diag = await diagnosesApi.create({
+        patient_id: payload.patient_id,
+        disease_name: payload.symptoms[0] || "General Consultation",
+        severity: payload.severity,
+        doctor_notes: `Symptoms: ${payload.symptoms.join(", ")}`,
+      });
+      // 2. Trigger the pipeline
+      return aiAssistApi.runPipeline(diag.id);
+    },
+    onSuccess: (data: PipelineRun) => {
+      setPollingId(data.id);
+      setRunData(data);
       setStep("running");
     },
-    onError: (e: unknown) => {
-      const msg = (e as {response?:{data?:{detail?:string}}})?.response?.data?.detail;
-      setError(msg || "Failed to start consultation.");
+    onError: (e: any) => {
+      setError(e.response?.data?.detail || "Could not start AI pipeline.");
     },
   });
-
-  function toggleSymptom(s: string) {
-    setSymptoms((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
-  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedPatientId) { setError("Select a patient."); return; }
     if (symptoms.length === 0) { setError("Select at least one symptom."); return; }
     setError("");
-    startMutation.mutate({ patient_id: selectedPatientId, symptoms, region });
+    startMutation.mutate({ patient_id: selectedPatientId, symptoms, severity });
   }
 
-  const selectedPatient = (patients as {id:string;name:string}[]).find((p) => p.id === selectedPatientId);
+  const selectedPatient = (patients as any[]).find((p) => p.id === selectedPatientId);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {/* Header */}
-      <div className="card card-pad">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 8, background: "var(--color-teal-light)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Stethoscope size={16} style={{ color: "var(--color-teal)" }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 17, fontWeight: 700 }}>New Consultation</h1>
-            <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 1 }}>
-              AI-powered diagnosis and drug recommendation
-            </p>
-          </div>
-          {step !== "form" && (
-            <button className="btn btn-ghost" style={{ marginLeft: "auto", fontSize: 12 }}
-              onClick={() => { setStep("form"); setResult(null); setPollingId(null); setSymptoms([]); setSelectedPatientId(""); }}>
-              New
-            </button>
-          )}
+    <div className="bento-main">
+      {/* Header Card */}
+      <div className="card card-pad" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 42, height: 42, borderRadius: 12, background: "var(--color-teal-light)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Stethoscope size={20} style={{ color: "var(--color-teal)" }} />
         </div>
+        <div>
+          <h1 style={{ fontSize: 18, fontWeight: 700 }}>Clinical Decision Support</h1>
+          <p style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Agentic Pipeline (9 Specialized Clinical Agents)</p>
+        </div>
+        {step !== "form" && (
+          <button className="btn btn-ghost" style={{ marginLeft: "auto" }} onClick={() => { setStep("form"); setRunData(null); }}>
+            New Case
+          </button>
+        )}
       </div>
 
       {step === "form" && (
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {/* Patient select */}
-          <div className="card card-pad">
-            <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Patient</p>
-            {loadingPts ? <PageSpinner /> : (
-              <select className="select" style={{ width: "100%" }}
-                value={selectedPatientId} onChange={(e) => setSelectedPatientId(e.target.value)}>
-                <option value="">— Select patient —</option>
-                {(patients as {id:string;name:string;age:number}[]).map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} (Age {p.age})</option>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "var(--spacing-bento-gap)" }}>
+          {/* Left Column: Patient & Severity */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-bento-gap)" }}>
+            <div className="card card-pad">
+              <p className="label-xs" style={{ marginBottom: 12 }}>Select Patient</p>
+              {loadingPts ? <PageSpinner /> : (
+                <select className="select" style={{ width: "100%" }} value={selectedPatientId} onChange={(e) => setSelectedPatientId(e.target.value)}>
+                  <option value="">— Choose Patient —</option>
+                  {(patients as any[]).map((p) => (
+                    <option key={p.id} value={p.id}>{p.full_name} (Age {p.age || 'N/A'})</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            
+            <div className="card card-pad">
+              <p className="label-xs" style={{ marginBottom: 12 }}>Clinical Severity</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                {["mild", "moderate", "severe"].map((s) => (
+                  <button key={s} type="button" onClick={() => setSeverity(s)} className={`btn ${severity === s ? 'btn-primary' : 'btn-ghost'}`} style={{ justifyContent: "center", textTransform: "capitalize" }}>
+                    {s}
+                  </button>
                 ))}
-              </select>
+              </div>
+            </div>
+
+            {error && (
+              <div className="card card-pad" style={{ background: "var(--color-rose-light)", color: "var(--color-rose)", display: "flex", gap: 8, alignItems: "center" }}>
+                <AlertCircle size={16} />
+                <span style={{ fontSize: 12, fontWeight: 600 }}>{error}</span>
+              </div>
             )}
           </div>
 
-          {/* Symptoms */}
-          <div className="card card-pad" style={{ position: "relative", zIndex: 50 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <p style={{ fontSize: 13, fontWeight: 700 }}>Symptoms & Conditions</p>
-              <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>{symptoms.length} selected</span>
-            </div>
-            <div style={{ marginBottom: 12 }}>
+          {/* Right Column: Symptoms */}
+          <div className="card card-pad">
+            <p className="label-xs" style={{ marginBottom: 12 }}>Symptoms & Standardized Findings</p>
+            <div style={{ marginBottom: 16 }}>
               <MedicalAutocomplete 
                 type="condition" 
-                placeholder="Search for symptoms (e.g. cough, pain)..."
+                placeholder="Search ICD-10 symptoms..."
                 onSelect={(val) => { if (!symptoms.includes(val)) setSymptoms([...symptoms, val]); }} 
               />
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {SYMPTOM_OPTIONS.map((s) => {
-                const active = symptoms.includes(s);
-                return (
-                  <button key={s} type="button" onClick={() => toggleSymptom(s)} style={{
-                    padding: "5px 11px", borderRadius: 100, fontSize: 12, fontWeight: 500, cursor: "pointer",
-                    border: "none",
-                    background: active ? "var(--color-teal)" : "var(--color-canvas)",
-                    color: active ? "#fff" : "var(--color-text-secondary)",
-                    transition: "all 0.15s ease",
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+              {SYMPTOM_OPTIONS.map((s) => (
+                <button key={s} type="button" onClick={() => setSymptoms(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
+                  style={{
+                    padding: "6px 14px", borderRadius: "var(--radius-pill)", fontSize: 12, fontWeight: 500,
+                    background: symptoms.includes(s) ? "var(--color-teal)" : "var(--color-canvas)",
+                    color: symptoms.includes(s) ? "#fff" : "var(--color-text-secondary)",
+                    border: "none", cursor: "pointer"
                   }}>
-                    {s.replace(/_/g, " ")}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Region */}
-          <div className="card card-pad">
-            <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Region (resistance patterns)</p>
-            <div style={{ display: "flex", gap: 8 }}>
-              {REGIONS.map((r) => (
-                <button key={r} type="button" onClick={() => setRegion(r)} style={{
-                  padding: "6px 14px", borderRadius: 100, fontSize: 12, fontWeight: 500, cursor: "pointer",
-                  border: "none",
-                  background: region === r ? "var(--color-teal)" : "var(--color-canvas)",
-                  color: region === r ? "#fff" : "var(--color-text-secondary)",
-                  transition: "all 0.15s",
-                }}>
-                  {r.replace("_", " ")}
+                  {s.replace(/_/g, " ")}
                 </button>
               ))}
             </div>
-          </div>
-
-          {error && (
-            <div style={{ padding: "9px 12px", background: "var(--color-rose-light)", borderRadius: 8, border: "1px solid rgba(244,63,94,0.2)", fontSize: 12, color: "#9F1239" }}>{error}</div>
-          )}
-
-          <div className="card card-pad">
-            <button className="btn btn-primary" type="submit" disabled={startMutation.isPending} style={{ width: "100%", justifyContent: "center" }}>
-              <Activity size={14} /> Start AI Consultation
+            <button className="btn btn-primary" style={{ width: "100%", height: 44, justifyContent: "center" }} onClick={handleSubmit} disabled={startMutation.isPending}>
+              {startMutation.isPending ? <Spinner size={16} /> : <Activity size={16} />}
+              Initialize 9-Agent Clinical Analysis
             </button>
-          </div>
-        </form>
-      )}
-
-      {step === "running" && (
-        <div className="card card-pad animate-fade-in" style={{ textAlign: "center" }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-            <Spinner size={28} />
-          </div>
-          <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Pipeline running…</p>
-          <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 16 }}>
-            Running 7 AI agents. This takes 10–20 seconds.
-          </p>
-          <div style={{ textAlign: "left", maxWidth: 280, margin: "0 auto" }}>
-            <PipelineProgress updates={[
-              "SymptomAnalysisAgent:running",
-              "DiagnosisAgent:pending",
-              "DrugRecommendationAgent:pending",
-              "ResistanceCheckAgent:pending",
-              "PatientSafetyAgent:pending",
-              "ExplainabilityAgent:pending",
-              "ReportAgent:pending",
-            ]} />
           </div>
         </div>
       )}
 
-      {step === "done" && result && (
-        <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div className="card card-pad" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {result.status === "complete"
-              ? <CheckCircle size={18} style={{ color: "var(--color-teal)" }} />
-              : <XCircle size={18} style={{ color: "var(--color-rose)" }} />
-            }
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 700 }}>
-                {result.status === "complete" ? "Consultation complete" : "Pipeline failed"}
-              </p>
-              <p style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
-                Patient: {selectedPatient?.name}
-              </p>
-            </div>
-            <Clock size={11} style={{ marginLeft: "auto", color: "var(--color-text-muted)" }} />
-            <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
-              {new Date(result.created_at).toLocaleTimeString()}
-            </span>
+      {step === "running" && (
+        <div className="card card-pad animate-fade-in" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 20px" }}>
+          <div style={{ position: "relative", marginBottom: 24 }}>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", border: "4px solid var(--color-teal-light)", borderTopColor: "var(--color-teal)" }} className="animate-spin-slow" />
+            <Activity size={24} style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "var(--color-teal)" }} />
           </div>
-          {result.status === "complete" && <ResultCard result={result.pipeline_output} />}
-          {result.status === "failed" && (
-            <div style={{ padding: 16, background: "var(--color-rose-light)", borderRadius: 10, fontSize: 12, color: "#9F1239" }}>
-              The pipeline encountered an error. Please check logs and retry.
+          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Orchestrating Agents...</h2>
+          <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 32, textAlign: "center", maxWidth: 400 }}>
+            Our distributed agents are performing Bayesian inference, resistance modeling, and safety cross-referencing.
+          </p>
+          <div style={{ width: "100%", maxWidth: 360, background: "var(--color-canvas)", borderRadius: 16, padding: 16 }}>
+             <PipelineProgress logs={runData?.step_logs || ["Initializing pipeline..."]} />
+          </div>
+        </div>
+      )}
+
+      {step === "done" && runData && (
+        <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-bento-gap)" }}>
+          <div className="card card-pad" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: runData.pipeline_status === "complete" ? "var(--color-teal-light)" : "var(--color-rose-light)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {runData.pipeline_status === "complete" ? <CheckCircle size={16} style={{ color: "var(--color-teal)" }} /> : <XCircle size={16} style={{ color: "var(--color-rose)" }} />}
             </div>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 700 }}>Analysis for {selectedPatient?.full_name}</p>
+              <p style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Completed at {new Date(runData.completed_at || '').toLocaleTimeString()}</p>
+            </div>
+          </div>
+          {runData.pipeline_status === "complete" ? <ResultCard run={runData} /> : (
+             <div className="card card-pad" style={{ background: "var(--color-rose-light)", color: "var(--color-rose)" }}>
+               <p style={{ fontWeight: 600 }}>Pipeline Execution Failed</p>
+               <p style={{ fontSize: 12 }}>Please check agent trace logs for clinical exceptions or connectivity issues.</p>
+             </div>
           )}
         </div>
       )}
     </div>
   );
 }
+

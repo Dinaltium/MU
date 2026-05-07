@@ -16,7 +16,7 @@ bcrypt==4.1.2
 cryptography==43.0.3
 
 # AI & LLM
-groq==0.11.0
+groq==0.15.0
 
 # Scientific / ML (for Agents)
 scikit-learn==1.5.0
@@ -31,4 +31,4 @@ redis==5.0.1
 python-dotenv==1.0.1
 python-multipart==0.0.9
 sse-starlette==2.1.3
-httpx==0.28.1
+httpx==0.27.2

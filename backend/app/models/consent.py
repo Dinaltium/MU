@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, String, UniqueConstraint
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -19,8 +19,8 @@ class PatientConsent(Base):
     __tablename__ = "patient_consents"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    doctor_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, ForeignKey("patient_profiles.id"), nullable=False, index=True)
+    doctor_id: Mapped[str] = mapped_column(String, ForeignKey("doctor_profiles.id"), nullable=False, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     consent_scope: Mapped[list] = mapped_column(JSON, default=lambda: list(DEFAULT_SCOPE))
     purpose: Mapped[str] = mapped_column(String, default="treatment")

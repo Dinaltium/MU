@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -17,7 +17,7 @@ class LabProfile(Base):
     __tablename__ = "lab_profiles"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), unique=True, nullable=False, index=True)
     lab_name: Mapped[str] = mapped_column(String, nullable=False)
     registration_id: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     address: Mapped[str] = mapped_column(String, nullable=False)

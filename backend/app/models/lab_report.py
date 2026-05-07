@@ -8,7 +8,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, JSON, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -18,11 +18,11 @@ class LabReport(Base):
     __tablename__ = "lab_reports"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    lab_order_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    lab_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    doctor_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    diagnosis_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    lab_order_id: Mapped[str] = mapped_column(String, ForeignKey("lab_orders.id"), nullable=False, index=True)
+    lab_id: Mapped[str] = mapped_column(String, ForeignKey("lab_profiles.id"), nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, ForeignKey("patient_profiles.id"), nullable=False, index=True)
+    doctor_id: Mapped[str] = mapped_column(String, ForeignKey("doctor_profiles.id"), nullable=False, index=True)
+    diagnosis_id: Mapped[str | None] = mapped_column(String, ForeignKey("diagnoses.id"), nullable=True)
     report_title: Mapped[str] = mapped_column(String, nullable=False)
     report_type: Mapped[str] = mapped_column(String, nullable=False)  # CBC|LFT|RFT|culture|imaging|biopsy|other
     raw_report_data: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
@@ -58,4 +58,9 @@ class LabReport(Base):
         "LabOrder", back_populates="lab_report", lazy="select",
         foreign_keys=[lab_order_id],
         primaryjoin="LabReport.lab_order_id == LabOrder.id",
+    )
+    doctor: Mapped["DoctorProfile"] = relationship(  # noqa: F821
+        "DoctorProfile", back_populates="lab_reports", lazy="select",
+        foreign_keys=[doctor_id],
+        primaryjoin="LabReport.doctor_id == DoctorProfile.id",
     )

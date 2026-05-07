@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, Date, DateTime, Float, String, Text
+from sqlalchemy import JSON, Date, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -17,7 +17,7 @@ class PatientProfile(Base):
     __tablename__ = "patient_profiles"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), unique=True, nullable=False, index=True)
     full_name: Mapped[str] = mapped_column(String, nullable=False)
     date_of_birth: Mapped[datetime | None] = mapped_column(Date, nullable=True)
     gender: Mapped[str | None] = mapped_column(String, nullable=True)

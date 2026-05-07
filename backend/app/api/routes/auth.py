@@ -14,8 +14,8 @@ from app.models.user import User
 from app.models.patient import PatientProfile
 from app.models.doctor import DoctorProfile
 from app.models.lab import LabProfile
-from app.schemas.schemas import RegisterRequest, LoginRequest, TokenResponse, SuccessResponse
-from app.core.security import hash_password, verify_password, create_access_token
+from app.schemas.schemas import RegisterRequest, LoginRequest, TokenResponse, SuccessResponse, UserMeResponse
+from app.core.security import hash_password, verify_password, create_access_token, get_current_user
 from app.services.audit_service import log_action, AuditAction
 
 router = APIRouter()
@@ -143,6 +143,49 @@ async def login(request: Request, data: LoginRequest, db: AsyncSession = Depends
         "token_type": "bearer",
         "role": user.role,
         "user_id": user.id,
+        "profile_id": profile_id,
+        "full_name": full_name
+    }
+
+
+@router.get("/me", response_model=UserMeResponse)
+async def get_me(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get current user profile information.
+    """
+    user_id = current_user["sub"]
+    role = current_user["role"]
+    email = current_user["email"]
+    profile_id = current_user["profile_id"]
+    
+    full_name = "Unknown User"
+    
+    if role == "patient":
+        stmt = select(PatientProfile).where(PatientProfile.user_id == user_id)
+        res = await db.execute(stmt)
+        p = res.scalar_one_or_none()
+        if p:
+            full_name = p.full_name
+    elif role == "doctor":
+        stmt = select(DoctorProfile).where(DoctorProfile.user_id == user_id)
+        res = await db.execute(stmt)
+        d = res.scalar_one_or_none()
+        if d:
+            full_name = d.full_name
+    elif role == "lab":
+        stmt = select(LabProfile).where(LabProfile.user_id == user_id)
+        res = await db.execute(stmt)
+        l = res.scalar_one_or_none()
+        if l:
+            full_name = l.lab_name
+            
+    return {
+        "user_id": user_id,
+        "email": email,
+        "role": role,
         "profile_id": profile_id,
         "full_name": full_name
     }

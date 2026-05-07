@@ -4,11 +4,32 @@ FastAPI entry point. Configures middleware, routes, and lifespan.
 """
 from __future__ import annotations
 
+import sys
+import os
 import logging
 from contextlib import asynccontextmanager
+
+# ── Windows DLL Fix for PyTorch/pgmpy ──
+if sys.platform == "win32":
+    import types
+    mock_torch = types.ModuleType("torch")
+    mock_torch.__version__ = "2.0.0"
+    mock_torch.nn = types.ModuleType("torch.nn")
+    mock_torch.optim = types.ModuleType("torch.optim")
+    mock_torch.Tensor = type("Tensor", (), {})
+    mock_torch.float32 = "float32"
+    sys.modules["torch"] = mock_torch
+    os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+    print("Windows: torch mocked to prevent DLL crash")
+    
+# ── Bcrypt/Passlib Fix ──
+import bcrypt
+if not hasattr(bcrypt, "__about__"):
+    bcrypt.__about__ = type("about", (object,), {"__version__": bcrypt.__version__})
+
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONErrorResponse
+from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.db.database import init_db
@@ -64,7 +85,7 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled error: {exc}", exc_info=True)
-    return JSONErrorResponse(
+    return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"success": False, "error": "Internal server error. Our team has been notified."}
     )

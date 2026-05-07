@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, Enum, String, Text
+from sqlalchemy import JSON, DateTime, Enum, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -17,8 +17,8 @@ class Diagnosis(Base):
     __tablename__ = "diagnoses"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    doctor_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    doctor_id: Mapped[str] = mapped_column(String, ForeignKey("doctor_profiles.id"), nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, ForeignKey("patient_profiles.id"), nullable=False, index=True)
     disease_name: Mapped[str] = mapped_column(String, nullable=False)
     disease_category: Mapped[str | None] = mapped_column(String, nullable=True)
     icd_10_code: Mapped[str | None] = mapped_column(String, nullable=True)
