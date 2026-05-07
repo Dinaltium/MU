@@ -16,7 +16,7 @@ bcrypt==4.1.2
 cryptography==43.0.3
 
 # AI & LLM
-google-generativeai==0.8.3
+groq==0.11.0
 
 # Scientific / ML (for Agents)
 scikit-learn==1.5.0

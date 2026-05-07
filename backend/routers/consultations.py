@@ -185,4 +185,10 @@ async def get_consultation(
         }
 
     # Doctor / admin — return full curated output
-    return dict(row)
+    data = dict(row)
+    if isinstance(data.get("pipeline_output"), str):
+        try:
+            data["pipeline_output"] = json.loads(data["pipeline_output"])
+        except:
+            pass
+    return data

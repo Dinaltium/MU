@@ -48,4 +48,11 @@ Thumbs.db
 logs/
 
 # Docker
-*.dockerignore
+# Databases
+*.db
+*.db-journal
+
+# Scratch scripts
+check_cons.py
+test_api.py
+check_users.py

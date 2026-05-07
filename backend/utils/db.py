@@ -20,34 +20,82 @@ SECURITY DECISIONS:
 """
 
 import asyncpg
+import aiosqlite
 import os
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
-_pool: asyncpg.Pool | None = None
+_pool = None
+_sqlite_conn = None
 
-
-async def get_pool() -> asyncpg.Pool:
-    """
-    Return the shared connection pool, creating it on first call.
-
-    WHY LAZY INIT:
-      FastAPI starts the pool inside the lifespan context manager so it
-      is created after the event loop exists. Calling asyncpg.create_pool()
-      at module import time would fail because no loop is running yet.
-    """
-    global _pool
+async def get_pool():
+    global _pool, _sqlite_conn
+    dsn = os.environ.get("DATABASE_URL", "sqlite:///./rxbridge.db")
+    
+    if dsn.startswith("sqlite"):
+        if _sqlite_conn is None:
+            db_path = dsn.replace("sqlite:///", "")
+            _sqlite_conn = await aiosqlite.connect(db_path)
+            _sqlite_conn.row_factory = aiosqlite.Row
+            logger.info(f"SQLite connected at {db_path}")
+        return patch_pool(_sqlite_conn)
+        
     if _pool is None:
         _pool = await asyncpg.create_pool(
-            dsn=os.environ["DATABASE_URL"],
+            dsn=dsn,
             min_size=2,
             max_size=10,
-            ssl="require",          # Enforce TLS — never plaintext
-            command_timeout=30,     # Prevent slow queries from hanging forever
+            ssl="require" if os.environ.get("ENVIRONMENT") == "production" else False,
+            command_timeout=30,
         )
-        logger.info("Database pool created (min=2, max=10, ssl=require)")
+        logger.info("Database pool created")
     return _pool
+
+# Mocking pool.acquire() for SQLite to maintain compatibility with existing code
+class SQLiteAcquire:
+    def __init__(self, conn):
+        self.conn = conn
+    async def __aenter__(self):
+        return SQLiteConnectionWrapper(self.conn)
+    async def __aexit__(self, exc_type, exc, tb):
+        pass
+
+class SQLiteConnectionWrapper:
+    def __init__(self, conn):
+        self.conn = conn
+    async def fetch(self, query, *args):
+        import re
+        q = re.sub(r"\$\d+(?:::\w+)?", "?", query)
+        q = q.replace("gen_random_uuid()", "(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))")
+        q = q.replace("NOW()", "CURRENT_TIMESTAMP").replace("INTERVAL '14 days'", "'-14 days'")
+        cursor = await self.conn.execute(q, args)
+        return await cursor.fetchall()
+    async def fetchrow(self, query, *args):
+        res = await self.fetch(query, *args)
+        return res[0] if res else None
+    async def execute(self, query, *args):
+        import re
+        # Replace $N::type and $N with ?
+        q = re.sub(r"\$\d+(?:::\w+)?", "?", query)
+        q = q.replace("gen_random_uuid()", "(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))")
+        q = q.replace("NOW()", "CURRENT_TIMESTAMP")
+        if not args:
+            await self.conn.executescript(q)
+        else:
+            await self.conn.execute(q, args)
+        await self.conn.commit()
+        return "UPDATE 1"
+
+def patch_pool(pool):
+    if hasattr(pool, "acquire"): return pool
+    pool.acquire = lambda: SQLiteAcquire(pool)
+    return pool
+
+async def get_db_pool():
+    p = await get_pool()
+    return patch_pool(p)
 
 
 async def init_db() -> None:

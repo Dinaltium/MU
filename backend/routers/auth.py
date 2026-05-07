@@ -159,7 +159,7 @@ async def login(
         )
 
     # Account lockout check
-    if user["locked_until"] and user["locked_until"] > datetime.now(tz=timezone.utc):
+    if user["locked_until"] and user["locked_until"] > datetime.now():
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Account locked. Try again after {user['locked_until'].isoformat()}",

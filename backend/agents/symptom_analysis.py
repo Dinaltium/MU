@@ -21,6 +21,7 @@ PRINCIPLE OF LEAST PRIVILEGE:
   It does not read patient PII, doctor IDs, or drug data.
 """
 
+import os
 from models.naive_bayes import SymptomClassifier
 from pipeline.state import PipelineState
 
@@ -37,6 +38,8 @@ RED_FLAGS = {
 }
 
 _classifier = SymptomClassifier()
+_DATA_DIR   = os.path.join(os.path.dirname(__file__), "..", "data")
+_classifier.load(os.path.join(_DATA_DIR, "symptom_model.pkl"))
 
 
 async def run(state: PipelineState) -> PipelineState:

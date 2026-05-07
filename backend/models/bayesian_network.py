@@ -73,16 +73,71 @@ class DiagnosisNetwork:
             ("fever",          "urinary_tract_infection"),
         ])
 
-        # Example CPT for fever node (prior)
-        cpd_fever = TabularCPD(
-            variable="fever", variable_card=2,
-            values=[[0.3], [0.7]]  # 70% of consultations present with fever
-        )
+        # 1. Symptom Priors (Probabilities of symptoms occurring)
+        cpds = [
+            TabularCPD(variable="fever", variable_card=2, values=[[0.3], [0.7]]),
+            TabularCPD(variable="neck_stiffness", variable_card=2, values=[[0.9], [0.1]]),
+            TabularCPD(variable="photophobia", variable_card=2, values=[[0.9], [0.1]]),
+            TabularCPD(variable="abdominal_pain", variable_card=2, values=[[0.8], [0.2]]),
+            TabularCPD(variable="chills", variable_card=2, values=[[0.7], [0.3]]),
+            TabularCPD(variable="cough", variable_card=2, values=[[0.6], [0.4]]),
+            TabularCPD(variable="dysuria", variable_card=2, values=[[0.9], [0.1]]),
+        ]
 
-        # Add CPTs for other symptoms similarly
-        # (In production, fit these from real data)
-        model.add_cpds(cpd_fever)
-        # validate() would be called here in a fully fitted model
+        # 2. Disease CPDs (Probabilities of diseases given symptoms)
+        # Note: This is a simplified model. In production, use real incidence data.
+        cpds.append(TabularCPD(
+            variable="bacterial_meningitis", variable_card=2,
+            values=[
+                [0.999, 0.5, 0.2, 0.1, 0.4, 0.1, 0.05, 0.01],
+                [0.001, 0.5, 0.8, 0.9, 0.6, 0.9, 0.95, 0.99]
+            ],
+            evidence=["fever", "neck_stiffness", "photophobia"],
+            evidence_card=[2, 2, 2]
+        ))
+        
+        cpds.append(TabularCPD(
+            variable="typhoid", variable_card=2,
+            values=[
+                [0.99, 0.4, 0.3, 0.01],
+                [0.01, 0.6, 0.7, 0.99]
+            ],
+            evidence=["fever", "abdominal_pain"],
+            evidence_card=[2, 2]
+        ))
+        
+        cpds.append(TabularCPD(
+            variable="malaria", variable_card=2,
+            values=[
+                [0.98, 0.3, 0.2, 0.01],
+                [0.02, 0.7, 0.8, 0.99]
+            ],
+            evidence=["fever", "chills"],
+            evidence_card=[2, 2]
+        ))
+        
+        cpds.append(TabularCPD(
+            variable="pneumonia", variable_card=2,
+            values=[
+                [0.95, 0.2, 0.1, 0.01],
+                [0.05, 0.8, 0.9, 0.99]
+            ],
+            evidence=["fever", "cough"],
+            evidence_card=[2, 2]
+        ))
+        
+        cpds.append(TabularCPD(
+            variable="urinary_tract_infection", variable_card=2,
+            values=[
+                [0.99, 0.4, 0.3, 0.01],
+                [0.01, 0.6, 0.7, 0.99]
+            ],
+            evidence=["fever", "dysuria"],
+            evidence_card=[2, 2]
+        ))
+
+        model.add_cpds(*cpds)
+        model.check_model()
         self.model     = model
         self.inference = VariableElimination(model)
         logger.info("DiagnosisNetwork built")

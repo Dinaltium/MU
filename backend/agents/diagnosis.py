@@ -24,10 +24,13 @@ INTERPRETABILITY:
   requirements without needing a separate XAI library.
 """
 
+import os
 from models.bayesian_network import DiagnosisNetwork
 from pipeline.state import PipelineState
 
-_network = DiagnosisNetwork()
+_network  = DiagnosisNetwork()
+_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+_network.load(os.path.join(_DATA_DIR, "diagnosis_network.pkl"))
 
 
 async def run(state: PipelineState) -> PipelineState:

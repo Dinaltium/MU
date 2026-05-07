@@ -72,9 +72,9 @@ async def create_patient(
             body.location,
             body.weight_kg,
             body.renal_function,
-            body.conditions,
-            body.allergies,
-            body.medications,
+            json.dumps(body.conditions),
+            json.dumps(body.allergies),
+            json.dumps(body.medications),
         )
     logger.info("Patient created by doctor %s", user["sub"])
     return {"id": str(row["id"])}

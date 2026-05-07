@@ -38,17 +38,19 @@ from contextlib import asynccontextmanager
 #      to the DLL search path often resolves this.
 # ──────────────────────────────────────────────────────────
 if sys.platform == "win32":
-    # Try to find torch/lib without importing torch first (to avoid the crash)
-    potential_torch_paths = [
-        os.path.join(os.path.dirname(sys.executable), "Lib", "site-packages", "torch", "lib"),
-        os.path.join(os.path.dirname(os.path.dirname(sys.executable)), "Lib", "site-packages", "torch", "lib"),
-    ]
-    for path in potential_torch_paths:
-        if os.path.exists(path):
-            os.add_dll_directory(path)
-            break
-    # Also set OpenMP duplicate lib policy just in case
+    # ── Torch DLL Fix ──
+    # pgmpy/torch often fails with WinError 1114 on certain Windows builds.
+    # We mock torch entirely to bypass the DLL initialization crash.
+    import types
+    mock_torch = types.ModuleType("torch")
+    mock_torch.__version__ = "2.0.0"
+    mock_torch.nn = types.ModuleType("torch.nn")
+    mock_torch.optim = types.ModuleType("torch.optim")
+    mock_torch.Tensor = type("Tensor", (), {})
+    mock_torch.float32 = "float32"
+    sys.modules["torch"] = mock_torch
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+    print("Windows: torch mocked to prevent DLL crash")
 
 
 from fastapi import FastAPI, Request, Response

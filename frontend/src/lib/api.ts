@@ -66,7 +66,7 @@ export const consultationsApi = {
   start: (data: { patient_id: string; symptoms: string[]; region: string }) =>
     api.post("/api/consultations/", data).then((r) => r.data),
 
-  get: (id: string) => api.get<Consultation>(`/consultations/${id}`).then(r => r.data),
+  get: (id: string) => api.get<Consultation>(`/api/consultations/${id}`).then(r => r.data),
 };
 
 /**
